@@ -10,10 +10,7 @@ import com.yupi.yupicturebackend.constant.UserConstant;
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
 import com.yupi.yupicturebackend.exception.ThrowUtils;
-import com.yupi.yupicturebackend.model.dto.user.UserAddRequest;
-import com.yupi.yupicturebackend.model.dto.user.UserLoginRequest;
-import com.yupi.yupicturebackend.model.dto.user.UserQueryRequest;
-import com.yupi.yupicturebackend.model.dto.user.UserRegisterRequest;
+import com.yupi.yupicturebackend.model.dto.user.*;
 import com.yupi.yupicturebackend.model.entity.User;
 import com.yupi.yupicturebackend.model.vo.LoginUserVO;
 import com.yupi.yupicturebackend.model.vo.UserVO;
@@ -128,6 +125,22 @@ public class UserController {
         }
         boolean result = userService.removeById(deleteRequest.getId());
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 更新用户
+     */
+    @PostMapping("/update")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+        if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = new User();
+        BeanUtil.copyProperties(userUpdateRequest, user);
+        boolean result = userService.updateById(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
     }
 
 

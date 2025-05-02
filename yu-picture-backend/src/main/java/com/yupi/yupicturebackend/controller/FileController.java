@@ -29,7 +29,6 @@ public class FileController {
 
     /**
      * 测试文件上传
-     * @return
      */
     @PostMapping("/test/upload")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
@@ -61,7 +60,6 @@ public class FileController {
 
     /**
      * 测试文件下载
-     * @return
      */
     @GetMapping("/test/download")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
