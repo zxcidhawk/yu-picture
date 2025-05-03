@@ -1,5 +1,6 @@
 package com.yupi.yupicturebackend.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -35,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -73,6 +75,7 @@ public class PictureController {
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(pictureVO);
     }
 
@@ -86,6 +89,7 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         String fileUrl = pictureUploadRequest.getFileUrl();
         PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(pictureVO);
     }
 
@@ -111,6 +115,7 @@ public class PictureController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         // 清理图片资源
         pictureService.clearPictureFile(oldPicture);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(true);
     }
 
@@ -141,6 +146,7 @@ public class PictureController {
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(true);
     }
 
@@ -202,6 +208,8 @@ public class PictureController {
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }
+
+    private static final String PICTURE_LIST_CACHE_PREFIX = "yupicture:listPictureVOByPage:";
 
     /**
      * 分页获取图片列表（封装类，有缓存）
@@ -284,6 +292,7 @@ public class PictureController {
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(true);
     }
 
@@ -321,7 +330,34 @@ public class PictureController {
         ThrowUtils.throwIf(pictureUploadByBatchRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         Integer uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
+        clearAllCacheByPrefix(PICTURE_LIST_CACHE_PREFIX);// 清理缓存
         return ResultUtils.success(uploadCount);
     }
+
+    /**
+     * 清除指定前缀的所有缓存（Redis + 本地缓存）
+     */
+    private void clearAllCacheByPrefix(String prefix) {
+        if (StringUtils.isBlank(prefix)) {
+            return;
+        }
+
+        Set<String> keys = stringRedisTemplate.keys(prefix + "*");
+
+        if (CollUtil.isNotEmpty(keys)) {
+            // 删除 Redis 缓存
+            stringRedisTemplate.delete(keys);
+
+            // 删除本地缓存
+            for (String key : keys) {
+                LOCAL_CACHE.invalidate(key);
+            }
+
+            log.info("已清除 {} 条缓存，前缀为: {}", keys.size(), prefix);
+        } else {
+            log.info("未找到匹配的缓存，前缀为: {}", prefix);
+        }
+    }
+
 }
 

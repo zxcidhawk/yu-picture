@@ -154,7 +154,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         boolean result = this.saveOrUpdate(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败，数据库操作失败");
         //  清理旧图片资源
-        this.clearPictureFile(oldPicture);
+        if (ObjUtil.isNotNull(oldPicture)) {
+            this.clearPictureFile(oldPicture);
+        }
 
         return PictureVO.objToVo(picture);
     }
