@@ -3,8 +3,18 @@
     <h2 style="margin-bottom: 16px">
       {{ route.query?.id ? '修改图片': '创建图片'}}
     </h2>
-    <!-- 图片上传组件 -->
-    <PictureUpload :picture="picture" :onSuccess="onSuccess" />
+
+    <!-- 选择上传方式 -->
+    <a-tabs v-model:activeKey="uploadType">
+      <a-tab-pane key="file" tab="文件上传">
+        <!-- 图片上传组件 -->
+        <PictureUpload :picture="picture" :onSuccess="onSuccess" />
+      </a-tab-pane>
+      <a-tab-pane key="url" tab="URL 上传">
+        <!-- url 图片上传组件 -->
+        <UrlPictureUpload :picture="picture" :onSuccess="onSuccess" />
+      </a-tab-pane>
+    </a-tabs>
     <!-- 图片信息表单 -->
     <!-- 搜索表单 -->
     <a-form v-if="picture" name="pictureForm" layout="vertical" :model="pictureForm" @finish="handleSubmit">
@@ -21,7 +31,7 @@
         <a-select v-model:value="pictureForm.tags" mode="tags" placeholder="请输入标签" :options="tagOptions" allow-clear/>
       </a-form-item>
       <a-form-item>
-        <a-button type="primary" html-type="submit" style="width: 100%">创建</a-button>
+        <a-button type="primary" html-type="submit" style="width: 100%">提交</a-button>
       </a-form-item>
     </a-form>
   </div>
@@ -38,11 +48,12 @@ import {
 } from '@/api/pictureController.ts'
 import router from '@/router'
 import { useRoute } from 'vue-router'
+import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
 
 const picture = ref<API.PictureVO>();
-const pictureForm = reactive<API.PictureEditRequest>({
+const pictureForm = reactive<API.PictureEditRequest>({});
+const uploadType = ref<'file' | 'url'>('file')
 
-});
 
 const onSuccess = (newPicture: API.PictureVO) => {
   picture.value = newPicture;
